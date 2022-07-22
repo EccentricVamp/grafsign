@@ -4,7 +4,7 @@
   "description": "Lightweight library for signing Grafana plugins",
   "main": "main.js",
   "scripts": {
-    "build": "esbuild main.ts --outfile main.js"
+    "build": "esbuild main.ts --outfile=main.js"
   },
   "repository": {
     "type": "git",
