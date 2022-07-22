@@ -1,0 +1,25 @@
+{
+  "name": "grafsign",
+  "version": "0.1.0",
+  "description": "Lightweight library for signing Grafana plugins",
+  "main": "main.js",
+  "scripts": {
+    "build": "esbuild main.ts --outfile main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EccentricVamp/grafsign.git"
+  },
+  "keywords": [
+    "grafana"
+  ],
+  "author": "Luke Cloninger (EccentricVamp)",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^18.0.6",
+    "esbuild": "^0.14.49"
+  },
+  "dependencies": {
+    "node-fetch": "^3.2.9"
+  }
+}
