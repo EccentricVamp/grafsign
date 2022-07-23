@@ -20,7 +20,6 @@ jobs:
         with:
           node-version: 18.x
           registry-url: https://npm.pkg.github.com/
-          scope: ${{ github.repository_owner }}
       - run: npm ci
       - run: |
           sed -i 's+"name": ".*+"name": "@eccentricvamp/grafsign",+gI' ./package.json
