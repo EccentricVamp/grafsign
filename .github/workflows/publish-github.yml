@@ -21,7 +21,8 @@ jobs:
           node-version: 18.x
           registry-url: https://npm.pkg.github.com/
       - run: npm ci
-      - run: |
+      - name: Publish to GitHub Package Registry
+        run: |
           sed -i 's+"name": ".*+"name": "@eccentricvamp/grafsign",+gI' ./package.json
           npm publish
         env:
