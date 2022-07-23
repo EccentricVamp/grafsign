@@ -20,6 +20,6 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
-      - run: cat /home/runner/work/grafsign/grafsign/.npmrc
+      - run: cat ${RUNNER_TEMP}/.npmrc
       - run: npm ci
       - run: npm publish --verbose
