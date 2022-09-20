@@ -96,4 +96,4 @@ async function saveManifest(dir, signedManifest) {
 }
 
 
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=grafsign.js.map
