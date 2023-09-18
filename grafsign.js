@@ -1,6 +1,7 @@
-import * as path from 'path';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import { readFileSync, writeFileSync } from 'fs';
+import path from 'path';
 const MANIFEST_FILE = 'MANIFEST.txt';
 export async function sign(signatureType, rootUrls) {
     const distContentDir = path.resolve('dist');
@@ -26,19 +27,19 @@ export async function sign(signatureType, rootUrls) {
     }
 }
 async function* walk(dir, baseDir) {
-    for await (const d of (await fs.promises.opendir(dir))){
+    for await (const d of (await fs.opendir(dir))){
         const entry = path.posix.join(dir, d.name);
         if (d.isDirectory()) {
             yield* walk(entry, baseDir);
         } else if (d.isFile()) {
             yield path.posix.relative(baseDir, entry);
         } else if (d.isSymbolicLink()) {
-            const realPath = await fs.promises.realpath(entry);
+            const realPath = await fs.realpath(entry);
             if (!realPath.startsWith(baseDir)) {
                 throw new Error(`symbolic link ${path.posix.relative(baseDir, entry)} targets a file outside of the base directory: ${baseDir}`);
             }
             // if resolved symlink target is a file include it in the manifest
-            const stats = await fs.promises.stat(realPath);
+            const stats = await fs.stat(realPath);
             if (stats.isFile()) {
                 yield path.posix.relative(baseDir, entry);
             }
@@ -46,7 +47,7 @@ async function* walk(dir, baseDir) {
     }
 }
 async function buildManifest(dir) {
-    const pluginJson = JSON.parse(fs.readFileSync(path.join(dir, 'plugin.json'), {
+    const pluginJson = JSON.parse(readFileSync(path.join(dir, 'plugin.json'), {
         encoding: 'utf8'
     }));
     const manifest = {
@@ -58,7 +59,11 @@ async function buildManifest(dir) {
         if (p === MANIFEST_FILE) {
             continue;
         }
-        manifest.files[p] = crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, p))).digest('hex');
+        // Signing plugins on Windows can create invalid paths with `\\` in the manifest
+        // causing `Modified signature` errors in Grafana. Regardless of OS make sure
+        // we have a posix compatible path.
+        const sanitisedFilePath = p.split(path.sep).join(path.posix.sep);
+        manifest.files[sanitisedFilePath] = crypto.createHash('sha256').update(readFileSync(path.join(dir, p))).digest('hex');
     }
     return manifest;
 }
@@ -91,7 +96,7 @@ async function signManifest(manifest) {
     }
 }
 async function saveManifest(dir, signedManifest) {
-    fs.writeFileSync(path.join(dir, MANIFEST_FILE), signedManifest);
+    writeFileSync(path.join(dir, MANIFEST_FILE), signedManifest);
     return true;
 }
 
