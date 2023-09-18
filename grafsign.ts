@@ -14,7 +14,7 @@ interface ManifestInfo {
   plugin: string;
   version: string;
   files: Record<string, string>;
-  toolkit?: {
+  signPlugin?: {
     version: string;
   };
 }
@@ -34,7 +34,7 @@ export async function sign(signatureType?: string, rootUrls?: string[]) {
       manifest.rootUrls = rootUrls;
     }
 
-    manifest.toolkit = { version: "eccentric" };
+    manifest.signPlugin = { version: "eccentric" };
     const signedManifest = await signManifest(manifest);
 
     console.log('Saving signed manifest...');
