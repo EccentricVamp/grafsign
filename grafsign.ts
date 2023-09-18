@@ -97,19 +97,26 @@ async function buildManifest(dir: string): Promise<ManifestInfo> {
 
 async function signManifest(manifest: ManifestInfo): Promise<string> {
   const GRAFANA_API_KEY = process.env.GRAFANA_API_KEY;
-  if (!GRAFANA_API_KEY) {
-    throw new Error('You must enter a GRAFANA_API_KEY to sign the plugin manifest');
+  const GRAFANA_ACCESS_POLICY_TOKEN = process.env.GRAFANA_ACCESS_POLICY_TOKEN;
+
+  if (!GRAFANA_API_KEY && !GRAFANA_ACCESS_POLICY_TOKEN) {
+    throw new Error('You must enter a GRAFANA_API_KEY OR GRAFANA_ACCESS_POLICY_TOKEN to sign the plugin manifest');
+  }
+
+  if (GRAFANA_API_KEY) {
+    console.warn('GRAFANA_API_KEY is deprecated. Use GRAFANA_ACCESS_POLICY_TOKEN instead');
   }
 
   const url = 'https://grafana.com/api/plugins/ci/sign';
 
+  const token = GRAFANA_ACCESS_POLICY_TOKEN ?? GRAFANA_API_KEY;
   try {
     const fetch = (await import("node-fetch")).default;
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + GRAFANA_API_KEY,
+        "Authorization": "Bearer " + token,
       },
       body: JSON.stringify(manifest),
     });
