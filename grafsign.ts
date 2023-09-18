@@ -1,6 +1,7 @@
-import * as path from 'path';
-import * as crypto from 'crypto';
-import * as fs from 'fs';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import { readFileSync, writeFileSync } from 'fs';
+import path from 'path';
 
 const MANIFEST_FILE = 'MANIFEST.txt';
 
@@ -46,15 +47,17 @@ export async function sign(signatureType?: string, rootUrls?: string[]) {
   }
 };
 
-async function* walk(dir: string, baseDir: string): AsyncGenerator<string, any, any> {
-  for await (const d of await (fs.promises as any).opendir(dir)) {
+type RecursiveWalk = AsyncGenerator<string, void | RecursiveWalk>;
+
+async function* walk(dir: string, baseDir: string): RecursiveWalk {
+  for await (const d of await fs.opendir(dir)) {
     const entry = path.posix.join(dir, d.name);
     if (d.isDirectory()) {
       yield* walk(entry, baseDir);
     } else if (d.isFile()) {
       yield path.posix.relative(baseDir, entry);
     } else if (d.isSymbolicLink()) {
-      const realPath = await (fs.promises as any).realpath(entry);
+      const realPath = await fs.realpath(entry);
       if (!realPath.startsWith(baseDir)) {
         throw new Error(
           `symbolic link ${path.posix.relative(
@@ -64,7 +67,7 @@ async function* walk(dir: string, baseDir: string): AsyncGenerator<string, any, 
         );
       }
       // if resolved symlink target is a file include it in the manifest
-      const stats = await (fs.promises as any).stat(realPath);
+      const stats = await fs.stat(realPath);
       if (stats.isFile()) {
         yield path.posix.relative(baseDir, entry);
       }
@@ -73,7 +76,7 @@ async function* walk(dir: string, baseDir: string): AsyncGenerator<string, any, 
 }
 
 async function buildManifest(dir: string): Promise<ManifestInfo> {
-  const pluginJson = JSON.parse(fs.readFileSync(path.join(dir, 'plugin.json'), { encoding: 'utf8' }));
+  const pluginJson = JSON.parse(readFileSync(path.join(dir, 'plugin.json'), { encoding: 'utf8' }));
 
   const manifest = {
     plugin: pluginJson.id,
@@ -88,7 +91,7 @@ async function buildManifest(dir: string): Promise<ManifestInfo> {
 
     manifest.files[p] = crypto
       .createHash('sha256')
-      .update(fs.readFileSync(path.join(dir, p)))
+      .update(readFileSync(path.join(dir, p)))
       .digest('hex');
   }
 
@@ -136,6 +139,6 @@ async function signManifest(manifest: ManifestInfo): Promise<string> {
 }
 
 async function saveManifest(dir: string, signedManifest: string): Promise<boolean> {
-  fs.writeFileSync(path.join(dir, MANIFEST_FILE), signedManifest);
+  writeFileSync(path.join(dir, MANIFEST_FILE), signedManifest);
   return true;
 }
